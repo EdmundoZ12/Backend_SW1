@@ -28,5 +28,6 @@ import { GptModule } from './gpt/gpt.module';
   controllers: [AppController],
   providers: [AppService],
   
+  
 })
 export class AppModule {}
