@@ -6,6 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Apunte } from '../../apunte/entities/apunte.entity';
 
 @Entity('tema')
 export class Tema {
@@ -27,4 +28,7 @@ export class Tema {
 
   @OneToMany(() => Tema, (tema) => tema.temaPadre)
   subTemas: Tema[];
+
+  @OneToMany(() => Apunte, (apunte) => apunte.tema)
+  apuntes: Apunte[];
 }
