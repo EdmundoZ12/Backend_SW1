@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { DbconfigModule } from './dbconfig/dbconfig.module';
 import { DbconfigService } from './dbconfig/dbconfig.service';
 import { GptModule } from './gpt/gpt.module';
+import { TemaModule } from './tema/tema.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { GptModule } from './gpt/gpt.module';
     AuthModule,
     DbconfigModule,
     GptModule,
+    TemaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

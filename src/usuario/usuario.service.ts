@@ -30,7 +30,7 @@ export class UsuarioService {
   }
 
   findOne(id: number):Promise<Usuario> {
-    return this.usuarioRepository.findOneBy({codigo:id});
+    return this.usuarioRepository.findOneBy({id:id});
   }
 
   async getUsuariobyEmail(email:string){
