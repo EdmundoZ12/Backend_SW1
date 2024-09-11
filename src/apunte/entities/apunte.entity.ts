@@ -10,9 +10,9 @@ export class Apunte {
   @Column()
   titulo: string;
 
-  @ManyToOne(() => Materia, (materia) => materia.apuntes, { nullable: false })
+  @ManyToOne(() => Materia, (materia) => materia.apuntes, { nullable: true })
   materia: Materia;
 
-  @ManyToOne(() => Tema, (tema) => tema.apuntes, { nullable: false })
+  @ManyToOne(() => Tema, (tema) => tema.apuntes, { nullable: true })
   tema: Tema;
 }
