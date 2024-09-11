@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
+import { Apunte } from '../../apunte/entities/apunte.entity';
 
 @Entity()
 export class Materia {
@@ -30,4 +31,7 @@ export class Materia {
 
   @OneToMany(() => Tema, (tema) => tema.materia)
   temas: Tema[];
+
+  @OneToMany(() => Apunte, (apunte) => apunte.materia)
+  apuntes: Apunte[];
 }

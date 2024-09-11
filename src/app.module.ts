@@ -9,6 +9,7 @@ import { DbconfigModule } from './dbconfig/dbconfig.module';
 import { DbconfigService } from './dbconfig/dbconfig.service';
 import { GptModule } from './gpt/gpt.module';
 import { TemaModule } from './tema/tema.module';
+import { ApunteModule } from './apunte/apunte.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TemaModule } from './tema/tema.module';
     DbconfigModule,
     GptModule,
     TemaModule,
+    ApunteModule,
   ],
   controllers: [AppController],
   providers: [AppService],
