@@ -1,5 +1,4 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { ImageToTextDto } from './dto/image-to-text.dto';
 import { imageToTextUseCase } from './use-cases/image-to-text.use-case';
@@ -8,8 +7,8 @@ import { imageToTextUseCase } from './use-cases/image-to-text.use-case';
 export class GptService {
   private openai: OpenAI;
 
-  constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+  constructor() {
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new InternalServerErrorException('OPENAI_API_KEY is not set');
     }
