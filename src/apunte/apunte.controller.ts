@@ -10,7 +10,9 @@ import {
 import { ApunteService } from './apunte.service';
 import { CreateApunteDto } from './dto/create-apunte.dto';
 import { UpdateApunteDto } from './dto/update-apunte.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Apunte') 
 @Controller('apunte')
 export class ApunteController {
   constructor(private readonly apunteService: ApunteService) {}

@@ -11,7 +11,9 @@ import {
 import { TemaService } from './tema.service';
 import { CreateTemaDto } from './dto/create-tema.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Tema') 
 @Controller('tema')
 export class TemaController {
   constructor(private readonly temaService: TemaService) {}
