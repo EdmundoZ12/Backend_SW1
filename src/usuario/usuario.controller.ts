@@ -14,6 +14,7 @@ export class UsuarioController {
     try {
       return this.usuarioService.register(createUsuarioDto);
     } catch (e) {
+      
       throw new HttpException('failed to retrive Users', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
