@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { ImageToTextDto } from './dto/image-to-text.dto';
@@ -6,14 +6,28 @@ import { imageToTextUseCase } from './use-cases/image-to-text.use-case';
 
 @Injectable()
 export class GptService {
-  constructor(readonly configService: ConfigService) {}
+  private openai: OpenAI;
 
-  private openai = new OpenAI({
-    apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-  });
+  constructor(private readonly configService: ConfigService) {
+    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new InternalServerErrorException('OPENAI_API_KEY is not set');
+    }
+    this.openai = new OpenAI({
+      apiKey,
+    });
+  }
 
   async imageToText(imageToTextDto: ImageToTextDto) {
     const { image_url } = imageToTextDto;
-    return await imageToTextUseCase(this.openai, { image_url });
+    try {
+      return await imageToTextUseCase(this.openai, { image_url });
+    } catch (error) {
+      // Manejo de errores en caso de fallo en la comunicación con OpenAI
+      throw new InternalServerErrorException(
+        'Error processing image to text',
+        error.message,
+      );
+    }
   }
 }
