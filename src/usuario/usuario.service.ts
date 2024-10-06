@@ -10,39 +10,46 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 export class UsuarioService {
   constructor(
     @InjectRepository(Usuario)
-    private usuarioRepository:Repository<Usuario>,
-  ){}
+    private usuarioRepository: Repository<Usuario>,
+  ) {}
 
   async register(createUsuarioDto: CreateUsuarioDto) {
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(createUsuarioDto.password,salt);
+    const hashedPassword = await bcrypt.hash(createUsuarioDto.password, salt);
+
+    const existingUsuario = await this.getUsuariobyEmail(createUsuarioDto.email);
+    if (existingUsuario) {
+      throw new Error('El email ya ha sido tomado');
+    }
 
     const usuario = this.usuarioRepository.create({
       ...createUsuarioDto,
-      password:hashedPassword,
-    })
-
+      password: hashedPassword,
+    });
     return this.usuarioRepository.save(usuario);
   }
 
-  findAll():Promise<Usuario[]> {
+  findAll(): Promise<Usuario[]> {
     return this.usuarioRepository.find();
   }
 
-  findOne(id: number):Promise<Usuario> {
-    return this.usuarioRepository.findOneBy({codigo:id});
+  findOne(id: number): Promise<Usuario> {
+    return this.usuarioRepository.findOneBy({ id: id });
   }
 
-  async getUsuariobyEmail(email:string){
-    return await this.usuarioRepository.findOneBy({email});
-}
+  async getUsuariobyEmail(email: string) {
+    return await this.usuarioRepository.findOneBy({ email });
+  }
 
-  async update(id: number, updateUsuarioDto: UpdateUsuarioDto) : Promise<Usuario>{
-    await this.usuarioRepository.update(id,updateUsuarioDto) ;
+  async update(
+    id: number,
+    updateUsuarioDto: UpdateUsuarioDto,
+  ): Promise<Usuario> {
+    await this.usuarioRepository.update(id, updateUsuarioDto);
     return this.findOne(id);
   }
 
-  async remove(id: number):Promise<void> {
+  async remove(id: number): Promise<void> {
     await this.usuarioRepository.delete(id);
   }
 }

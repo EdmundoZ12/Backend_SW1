@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Request, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthGuard } from "./guard/auth.guard";
 import { LoginUsuarioDto } from "./dto/login-usuario.dto";
+import { ApiTags } from "@nestjs/swagger";
 
-
+@ApiTags('Auth') 
 @Controller('auth')
 export class AuthController{
     constructor(
@@ -13,5 +14,12 @@ export class AuthController{
     @Post('login')
     login (@Body() loginUsuarioDto:LoginUsuarioDto){
         return this.authservice.login(loginUsuarioDto);
+    }
+
+    @UseGuards( AuthGuard )
+    @Get('check-token')
+    checkToken( @Request() req: Request ) {
+        const user = req['user'];
+        return this.authservice.checkToken(user);
     }
 }

@@ -18,7 +18,7 @@ export class DbconfigService {
       password: this.get('POSTGRES_PASSWORD'),
       database: this.get('POSTGRES_DATABASE'),
       synchronize: this.get('EJECUTAR_MIGRACIONES') === 'true',
-    //   logging: true, // logging habilitado en desarrollo
+      // logging: true, // logging habilitado en desarrollo
       entities: [__dirname + '/../**/*.entity{.ts,.js}'], // Asegúrate de que las entidades estén bien configuradas
     };
   }

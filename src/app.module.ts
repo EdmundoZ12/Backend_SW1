@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Alternativamente, puedes usar require('dotenv').config();
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { DbconfigModule } from './dbconfig/dbconfig.module';
 import { DbconfigService } from './dbconfig/dbconfig.service';
 import { GptModule } from './gpt/gpt.module';
+import { TemaModule } from './tema/tema.module';
+import { ApunteModule } from './apunte/apunte.module';
 import { MateriaModule } from './materia/materia.module';
 
 @Module({
@@ -25,6 +28,8 @@ import { MateriaModule } from './materia/materia.module';
     AuthModule,
     DbconfigModule,
     GptModule,
+    TemaModule,
+    ApunteModule,
     MateriaModule,
   ],
   controllers: [AppController],
