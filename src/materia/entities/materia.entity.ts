@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Apunte } from '../../apunte/entities/apunte.entity';
 
+
 @Entity()
 export class Materia {
   @PrimaryGeneratedColumn()
@@ -34,4 +35,9 @@ export class Materia {
 
   @OneToMany(() => Apunte, (apunte) => apunte.materia)
   apuntes: Apunte[];
+
+
+  
 }
+
+

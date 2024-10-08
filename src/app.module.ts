@@ -12,6 +12,7 @@ import { GptModule } from './gpt/gpt.module';
 import { TemaModule } from './tema/tema.module';
 import { ApunteModule } from './apunte/apunte.module';
 import { MateriaModule } from './materia/materia.module';
+import { ArchivoModule } from './archivo/archivo.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { MateriaModule } from './materia/materia.module';
     TemaModule,
     ApunteModule,
     MateriaModule,
+    ArchivoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
