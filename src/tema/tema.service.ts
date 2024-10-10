@@ -67,6 +67,59 @@ export class TemaService {
     return tema;
   }
 
+  async findRootTemasByMateria(materiaId: number) {
+    const materia = await this.materiaService.findOne(materiaId);
+    if (!materia) {
+      throw new HttpException('Materia no encontrada', HttpStatus.NOT_FOUND);
+    }
+
+    // Obtener todos los temas de la materia
+    const allTemas = await this.temaRepository.find({
+      where: { materia: { id: materiaId } },
+      relations: ['temaPadre'],
+      order: { id: 'ASC' },
+    });
+
+    // Función para construir el árbol de temas
+    const buildTemaTree = (temas: Tema[]): any[] => {
+      const temaMap = new Map(temas.map(t => [t.id, { ...t, subTemas: [] }]));
+      const rootTemas = [];
+
+      temas.forEach(tema => {
+        const temaWithSubTemas = temaMap.get(tema.id);
+        if (!tema.temaPadre) {
+          rootTemas.push(temaWithSubTemas);
+        } else {
+          const parent = temaMap.get(tema.temaPadre.id);
+          if (parent) {
+            parent.subTemas.push(temaWithSubTemas);
+          }
+        }
+      });
+
+      return rootTemas;
+    };
+
+    // Construir el árbol de temas
+    const rootTemas = buildTemaTree(allTemas);
+
+    // Función para limpiar la estructura (eliminar propiedades no deseadas)
+    const cleanTemaStructure = (tema: any): any => {
+      const { id, nombre, subTemas } = tema;
+      return {
+        id,
+        nombre,
+        subTemas: subTemas.map(cleanTemaStructure)
+      };
+    };
+
+    // Limpiar y devolver la estructura final
+    return rootTemas.map(cleanTemaStructure);
+  }
+  
+  
+
+
   async update(id: number, updateTemaDto: UpdateTemaDto) {
     const tema = await this.findOneWithSubTemas(id);
     if (!tema)

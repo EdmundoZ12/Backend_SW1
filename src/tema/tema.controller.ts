@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
-} from '@nestjs/common';
+} from '@nestjs/common'; 
 import { TemaService } from './tema.service';
 import { CreateTemaDto } from './dto/create-tema.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
@@ -22,6 +22,13 @@ export class TemaController {
   createTema(@Body() createTemaDto: CreateTemaDto) {
     return this.temaService.createTema(createTemaDto);
   }
+
+    // Ruta para obtener todos los temas raíz de una materia específica, junto con sus subtemas
+    @Get('materia/:materiaId')
+    async findRootTemasByMateria(@Param('materiaId') materiaId: number) {
+        const temas = await this.temaService.findRootTemasByMateria(materiaId);
+        return temas;
+    }
 
   @Get('/temas-raices/:id')
   findAll(@Param('id', ParseIntPipe) id: number) {
