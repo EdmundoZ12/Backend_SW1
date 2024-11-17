@@ -5,12 +5,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Tema } from './entities/tema.entity';
 import { Not, Repository } from 'typeorm';
 import { MateriaService } from 'src/materia/materia.service';
+import { ApunteService } from 'src/apunte/apunte.service';
 
 @Injectable()
 export class TemaService {
   constructor(
     @InjectRepository(Tema) private readonly temaRepository: Repository<Tema>,
     private readonly materiaService: MateriaService,
+    private readonly apunteService: ApunteService
   ) {}
 
   async createTema(createTemaDto: CreateTemaDto) {
@@ -100,5 +102,18 @@ export class TemaService {
 
     await this.temaRepository.delete(id);
     return { message: 'Tema eliminado exitosamente' };
+  }
+
+  private async findOne(id: number) {
+    const tema = this.temaRepository.findOneBy({ id: id });
+    if (!tema)
+      throw new HttpException('Tema no encontrado', HttpStatus.NOT_FOUND);
+    return tema;
+  }
+
+  async getApuntesByTema(id: number) {
+    const tema = await this.findOne(id);
+    
+    return this.apunteService.findByTemaId(tema.id);
   }
 }

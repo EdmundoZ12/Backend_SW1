@@ -42,4 +42,9 @@ export class TemaController {
   remove(@Param('id') id: string) {
     return this.temaService.remove(+id);
   }
+
+  @Get(':id/apuntes')
+  findApuntes(@Param('id', ParseIntPipe) id: number) {
+    return this.temaService.getApuntesByTema(+id);
+  }
 }

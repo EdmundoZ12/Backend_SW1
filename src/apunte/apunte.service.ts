@@ -114,4 +114,13 @@ export class ApunteService {
     const apunte = await this.findOne(id);
     await this.apunteRepository.remove(apunte);
   }
+
+  async findByTemaId(id: number) {
+    return this.apunteRepository.find({
+      where: {
+        tema: { id },
+      },
+      // relations: ['tema'], // Incluye la relación si quieres los datos del tema junto con los apuntes
+    });
+  }
 }

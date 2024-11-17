@@ -10,5 +10,6 @@ import { Tema } from '../tema/entities/tema.entity';
   imports: [TypeOrmModule.forFeature([Apunte, Materia, Tema])],
   controllers: [ApunteController],
   providers: [ApunteService],
+  exports: [ApunteService],
 })
 export class ApunteModule {}
