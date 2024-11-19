@@ -11,6 +11,7 @@ import { DbconfigService } from './dbconfig/dbconfig.service';
 import { GptModule } from './gpt/gpt.module';
 import { TemaModule } from './tema/tema.module';
 import { ApunteModule } from './apunte/apunte.module';
+import { EditorModule } from './websocket/editor.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ApunteModule } from './apunte/apunte.module';
     GptModule,
     TemaModule,
     ApunteModule,
+    EditorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
