@@ -34,13 +34,18 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleConnection(client: Socket) {
     this.logger.debug(`Client connected: ${client.id}`);
+    // Verificar datos del cliente establecidos por el guard
+    const userEmail = client.data?.email;
+    if (userEmail) {
+      this.logger.debug(`Authenticated user: ${userEmail}`);
+    }
   }
 
   handleDisconnect(client: Socket) {
     this.logger.debug(`Client disconnected: ${client.id}`);
     const sessionId = this.userSessions.get(client.id);
     if (sessionId) {
-      const userEmail = client.data.email; // Set by WsJwtGuard
+      const userEmail = client.data.email;
       this.handleUserDisconnect(sessionId, userEmail);
     }
   }
@@ -55,43 +60,74 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: JoinSessionDto,
   ) {
-    const { sessionId, userEmail } = data;
-    this.logger.debug(
-      `Join session request: ${sessionId} from user: ${userEmail}`,
-    );
+    this.logger.debug(`Join session event received:`, data);
 
-    if (!this.memoryService.isUserAllowed(sessionId, userEmail)) {
-      client.emit('error', { message: 'Not authorized to join this session' });
-      return;
+    try {
+      const { sessionId, userEmail } = data;
+
+      // Verificar si la sesión existe
+      let session = this.memoryService.getSession(sessionId);
+      let isNewSession = false;
+
+      if (!session) {
+        this.logger.debug(
+          `Creating new session: ${sessionId} for user: ${userEmail}`,
+        );
+        session = this.memoryService.createSession(sessionId, userEmail);
+        isNewSession = true;
+      }
+
+      // Agregar usuario a la sesión
+      const success = this.memoryService.addUserToSession(
+        sessionId,
+        userEmail,
+        client.id,
+      );
+
+      if (!success) {
+        this.logger.error(`Failed to add user to session: ${userEmail}`);
+        client.emit('error', { message: 'Failed to join session' });
+        return;
+      }
+
+      // Guardar la relación socket -> session
+      this.userSessions.set(client.id, sessionId);
+
+      // Unir al cliente a la sala
+      await client.join(sessionId);
+
+      // Preparar respuesta
+      const responseData = {
+        creatorEmail: session.creatorEmail,
+        sessionId: session.sessionId,
+      };
+
+      this.logger.debug(
+        `Emitting ${isNewSession ? 'session-created' : 'session-joined'}:`,
+        responseData,
+      );
+
+      // Emitir evento según sea nuevo o existente
+      if (isNewSession) {
+        client.emit('session-created', responseData);
+      } else {
+        client.emit('session-joined', responseData);
+      }
+
+      // Notificar usuarios activos
+      const activeUsers = this.memoryService.getActiveUsers(sessionId);
+      this.logger.debug(`Active users in session:`, activeUsers);
+      this.server.to(sessionId).emit('active-users', activeUsers);
+
+      this.logger.debug(`Session join completed for user: ${userEmail}`);
+    } catch (error) {
+      this.logger.error('Error in handleJoinSession:', error);
+      client.emit('error', { message: 'Server error while joining session' });
     }
-
-    // Agregar usuario a la sesión
-    const success = this.memoryService.addUserToSession(
-      sessionId,
-      userEmail,
-      client.id,
-    );
-    if (!success) {
-      client.emit('error', { message: 'Failed to join session' });
-      return;
-    }
-
-    // Guardar la relación socket -> session
-    this.userSessions.set(client.id, sessionId);
-
-    // Unir al cliente a la sala
-    client.join(sessionId);
-
-    // Enviar documento actual
-    const document = this.memoryService.getDocument(sessionId);
-    client.emit('load-document', document);
-
-    // Notificar a todos los usuarios activos
-    this.notifyActiveUsers(sessionId);
   }
 
   @SubscribeMessage('get-document')
-  async handleGetDocument(
+  handleGetDocument(
     @ConnectedSocket() client: Socket,
     @MessageBody() sessionId: string,
   ) {
@@ -101,19 +137,19 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('send-changes')
-  async handleDocumentChange(
+  handleDocumentChange(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: any, // todo: cambiar a DocumentChange
+    @MessageBody() data: any,
   ) {
-    const sessionId = this.userSessions.get(client.id);
+    const userEmail = client.data.email; // Set by WsJwtGuard
+    this.logger.debug(`Changes received from user: ${userEmail}`);
+
+    const sessionId = Array.from(client.rooms)[1]; // El primer room es el socket.id
     if (!sessionId) return;
 
-    this.logger.debug(`Changes received for session ${sessionId}`);
-
-    // Agregar cambio al buffer
     this.memoryService.addToBuffer(sessionId, data);
 
-    // Broadcast a otros usuarios
+    // Broadcast a otros usuarios en la sesión
     client.broadcast.to(sessionId).emit('receive-changes', data);
   }
 

@@ -21,6 +21,7 @@ export class WsJwtGuard implements CanActivate {
       // Adjuntar el payload decodificado al socket
       client.data.email = payload.email;
       client.data.userId = payload.sub;
+      console.log('Client data:', client.data);
 
       return true;
     } catch {

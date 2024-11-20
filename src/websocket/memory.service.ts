@@ -6,6 +6,7 @@ interface SessionUser {
   socketId: string;
   permission: DocumentPermission;
   lastAccess: Date;
+  isCreator?: boolean; // Agregamos esta propiedad como opcional
 }
 
 interface Session {
@@ -34,11 +35,12 @@ export class MemoryService {
       activeUsers: new Map(),
       allowedUsers: new Map([[creatorEmail, DocumentPermission.OWNER]]),
       buffer: [],
-      document: {},
+      document: '',
       lastModified: new Date(),
     };
 
     this.sessions.set(sessionId, session);
+    this.logger.debug(`Session created successfully:`, session);
     return session;
   }
 
@@ -52,22 +54,28 @@ export class MemoryService {
     socketId: string,
   ): boolean {
     const session = this.sessions.get(sessionId);
-    if (!session) return false;
 
-    if (!session.allowedUsers.has(email)) {
-      this.logger.warn(`User ${email} not authorized for session ${sessionId}`);
+    if (!session) {
+      this.logger.warn(`Session ${sessionId} not found`);
       return false;
     }
 
-    const permission = session.allowedUsers.get(email)!;
+    const isCreator = email === session.creatorEmail;
+    const permission = isCreator
+      ? DocumentPermission.OWNER
+      : DocumentPermission.EDITOR;
+
     session.activeUsers.set(email, {
       email,
       socketId,
       permission,
       lastAccess: new Date(),
+      isCreator,
     });
 
-    this.logger.debug(`User ${email} added to session ${sessionId}`);
+    this.logger.debug(
+      `User ${email} added to session ${sessionId} with permission ${permission}`,
+    );
     return true;
   }
 
@@ -99,9 +107,14 @@ export class MemoryService {
     return session ? session.allowedUsers.has(email) : false;
   }
 
-  getActiveUsers(sessionId: string): SessionUser[] {
+  getActiveUsers(sessionId: string): any[] {
     const session = this.sessions.get(sessionId);
-    return session ? Array.from(session.activeUsers.values()) : [];
+    if (!session) return [];
+
+    return Array.from(session.activeUsers.values()).map((user) => ({
+      ...user,
+      isCreator: user.email === session.creatorEmail,
+    }));
   }
 
   getUserPermission(
