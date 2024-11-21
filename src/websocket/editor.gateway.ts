@@ -17,6 +17,7 @@ interface SessionData {
   activeUsers: Set<string>;
   allowedUsers: Set<string>;
   buffer: any[];
+  currentContent: any;
 }
 
 @Injectable()
@@ -31,12 +32,12 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private sessions = new Map<string, SessionData>();
 
   handleConnection(client: Socket) {
-    this.logger.debug(`Client connected: ${client.id}`);
+    this.logger.debug(`[EditorGateway] Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.debug(`Client disconnected: ${client.id}`);
-    // Implementaremos la lógica de desconexión más adelante
+    this.logger.debug(`[EditorGateway] Client disconnected: ${client.id}`);
+    // TODO: Implementar limpieza de sesiones y notificación a otros usuarios
   }
 
   @SubscribeMessage('createSession')
@@ -44,7 +45,9 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { creatorEmail: string },
   ) {
-    this.logger.debug(`Creating session for: ${data.creatorEmail}`);
+    this.logger.debug(
+      `[EditorGateway] Creating session for: ${data.creatorEmail}`,
+    );
 
     const sessionId = uuidv4();
     const sessionData: SessionData = {
@@ -53,15 +56,18 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       activeUsers: new Set([data.creatorEmail]),
       allowedUsers: new Set([data.creatorEmail]),
       buffer: [],
+      currentContent: { ops: [{ insert: '\n' }] }, // Inicializar con contenido vacío
     };
 
     this.sessions.set(sessionId, sessionData);
     client.join(sessionId);
 
+    this.logger.debug(`[EditorGateway] Session created with ID: ${sessionId}`);
     return {
       status: 'success',
       sessionId,
       message: 'Session created successfully',
+      currentContent: sessionData.currentContent,
     };
   }
 
@@ -87,28 +93,9 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { status: 'error', message: 'User not authorized' };
     }
 
-    this.logger.debug(
-      `[EditorGateway] Current buffer size: ${session.buffer.length}`,
-    );
-
-    // Obtener todos los cambios del buffer
-    const changes = session.buffer.map((delta, index) => {
-      this.logger.debug(`[EditorGateway] Processing delta ${index}:`, delta);
-      return {
-        delta,
-        userId: session.creatorEmail,
-        timestamp: Date.now(),
-        version: index,
-      };
-    });
-
     client.join(data.sessionId);
     session.activeUsers.add(data.userEmail);
-    this.logger.debug(
-      `[EditorGateway] Active users after join: ${Array.from(session.activeUsers)}`,
-    );
 
-    // Notificar a todos los usuarios de la sesión
     this.server.to(data.sessionId).emit('userJoined', {
       userEmail: data.userEmail,
       activeUsers: Array.from(session.activeUsers),
@@ -118,15 +105,13 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       status: 'success',
       activeUsers: Array.from(session.activeUsers),
       currentContent: {
-        changes,
+        content: session.currentContent,
+        changes: session.buffer,
         version: session.buffer.length,
       },
     };
 
-    this.logger.debug(
-      `[EditorGateway] Sending join response with ${changes.length} changes`,
-    );
-
+    this.logger.debug('[EditorGateway] Sending join response:', responseData);
     return responseData;
   }
 
@@ -140,19 +125,27 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       usersToAdd: string[];
     },
   ) {
-    this.logger.debug(`Adding allowed users to session ${data.sessionId}`);
+    this.logger.debug(
+      `[EditorGateway] Adding users to session ${data.sessionId}:`,
+      data.usersToAdd,
+    );
 
     const session = this.sessions.get(data.sessionId);
     if (!session) {
+      this.logger.error(`[EditorGateway] Session not found: ${data.sessionId}`);
       return { status: 'error', message: 'Session not found' };
     }
 
     if (session.creatorEmail !== data.creatorEmail) {
+      this.logger.error(
+        `[EditorGateway] Unauthorized add users attempt by: ${data.creatorEmail}`,
+      );
       return { status: 'error', message: 'Not authorized to add users' };
     }
 
     data.usersToAdd.forEach((email) => {
       session.allowedUsers.add(email);
+      this.logger.debug(`[EditorGateway] Added user to session: ${email}`);
     });
 
     return {
@@ -170,30 +163,40 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       sessionId: string;
       userEmail: string;
       delta: any;
+      content?: any;
     },
   ) {
     this.logger.debug(
-      `Editor changes from ${data.userEmail} in session ${data.sessionId}`,
+      `[EditorGateway] Received changes from ${data.userEmail} in session ${data.sessionId}`,
     );
 
     const session = this.sessions.get(data.sessionId);
     if (!session || !session.activeUsers.has(data.userEmail)) {
+      this.logger.error(`[EditorGateway] Unauthorized change attempt`);
       return { status: 'error', message: 'Not authorized' };
     }
 
-    // Guardar el delta en el buffer
-    session.buffer.push({
-      delta: data.delta,
-      timestamp: new Date(),
-      userEmail: data.userEmail,
-    });
+    // Actualizar contenido actual
+    if (data.content) {
+      session.currentContent = data.content;
+      this.logger.debug(
+        '[EditorGateway] Updated session content:',
+        session.currentContent,
+      );
+    }
 
-    // Emitir cambios a todos menos al emisor
-    client.to(data.sessionId).emit('editorChanges', {
+    const change = {
       delta: data.delta,
+      content: session.currentContent,
       userEmail: data.userEmail,
-    });
+      timestamp: Date.now(),
+    };
 
-    return { status: 'success' };
+    session.buffer.push(change);
+
+    // Emitir a todos los clientes excepto al emisor
+    client.to(data.sessionId).emit('editorChanges', change);
+
+    return { status: 'success', version: session.buffer.length };
   }
 }
