@@ -43,7 +43,7 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('createSession')
   handleCreateSession(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { creatorEmail: string },
+    @MessageBody() data: { creatorEmail: string; initialContent?: any },
   ) {
     this.logger.debug(
       `[EditorGateway] Creating session for: ${data.creatorEmail}`,
@@ -56,13 +56,18 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       activeUsers: new Set([data.creatorEmail]),
       allowedUsers: new Set([data.creatorEmail]),
       buffer: [],
-      currentContent: { ops: [{ insert: '\n' }] }, // Inicializar con contenido vacío
+      currentContent: data.initialContent || { ops: [{ insert: '\n' }] }, // Usar contenido inicial si existe
     };
 
     this.sessions.set(sessionId, sessionData);
     client.join(sessionId);
 
     this.logger.debug(`[EditorGateway] Session created with ID: ${sessionId}`);
+    this.logger.debug(
+      `[EditorGateway] Initial content:`,
+      sessionData.currentContent,
+    );
+
     return {
       status: 'success',
       sessionId,
@@ -95,6 +100,11 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.join(data.sessionId);
     session.activeUsers.add(data.userEmail);
+
+    this.logger.debug(
+      '[EditorGateway] Current session content:',
+      session.currentContent,
+    );
 
     this.server.to(data.sessionId).emit('userJoined', {
       userEmail: data.userEmail,
@@ -163,20 +173,21 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       sessionId: string;
       userEmail: string;
       delta: any;
-      content?: any;
+      content: any;
     },
   ) {
     this.logger.debug(
       `[EditorGateway] Received changes from ${data.userEmail} in session ${data.sessionId}`,
     );
+    this.logger.debug('[EditorGateway] Content received:', data.content);
 
     const session = this.sessions.get(data.sessionId);
-    if (!session || !session.activeUsers.has(data.userEmail)) {
+    if (!session || !session.allowedUsers.has(data.userEmail)) {
       this.logger.error(`[EditorGateway] Unauthorized change attempt`);
       return { status: 'error', message: 'Not authorized' };
     }
 
-    // Actualizar contenido actual
+    // Siempre actualizar el contenido actual con el contenido completo recibido
     if (data.content) {
       session.currentContent = data.content;
       this.logger.debug(
