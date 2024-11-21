@@ -71,20 +71,42 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { sessionId: string; userEmail: string },
   ) {
     this.logger.debug(
-      `Join request - Session: ${data.sessionId}, User: ${data.userEmail}`,
+      `[EditorGateway] Join request - Session: ${data.sessionId}, User: ${data.userEmail}`,
     );
 
     const session = this.sessions.get(data.sessionId);
     if (!session) {
+      this.logger.error(`[EditorGateway] Session not found: ${data.sessionId}`);
       return { status: 'error', message: 'Session not found' };
     }
 
     if (!session.allowedUsers.has(data.userEmail)) {
+      this.logger.error(
+        `[EditorGateway] User not authorized: ${data.userEmail}`,
+      );
       return { status: 'error', message: 'User not authorized' };
     }
 
+    this.logger.debug(
+      `[EditorGateway] Current buffer size: ${session.buffer.length}`,
+    );
+
+    // Obtener todos los cambios del buffer
+    const changes = session.buffer.map((delta, index) => {
+      this.logger.debug(`[EditorGateway] Processing delta ${index}:`, delta);
+      return {
+        delta,
+        userId: session.creatorEmail,
+        timestamp: Date.now(),
+        version: index,
+      };
+    });
+
     client.join(data.sessionId);
     session.activeUsers.add(data.userEmail);
+    this.logger.debug(
+      `[EditorGateway] Active users after join: ${Array.from(session.activeUsers)}`,
+    );
 
     // Notificar a todos los usuarios de la sesión
     this.server.to(data.sessionId).emit('userJoined', {
@@ -92,10 +114,20 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       activeUsers: Array.from(session.activeUsers),
     });
 
-    return {
+    const responseData = {
       status: 'success',
       activeUsers: Array.from(session.activeUsers),
+      currentContent: {
+        changes,
+        version: session.buffer.length,
+      },
     };
+
+    this.logger.debug(
+      `[EditorGateway] Sending join response with ${changes.length} changes`,
+    );
+
+    return responseData;
   }
 
   @SubscribeMessage('addAllowedUsers')
