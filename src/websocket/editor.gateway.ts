@@ -134,26 +134,41 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(data.sessionId);
     session.activeUsers.add(data.userEmail);
 
-    // Obtener los permisos del usuario que se une
-    const permissions = session.userPermissions.get(data.userEmail) || {
-      canEdit: true,
-      canInvite: false,
-      canChangePermissions: false,
-    };
+    // Determinar los permisos basados en si es el creador o no
+    let userPermissions;
+    if (data.userEmail === session.creatorEmail) {
+      userPermissions = {
+        canEdit: true,
+        canInvite: true,
+        canChangePermissions: true,
+        canRemoveUsers: true,
+      };
+    } else {
+      userPermissions = session.userPermissions.get(data.userEmail) || {
+        canEdit: true,
+        canInvite: false,
+        canChangePermissions: false,
+        canRemoveUsers: false,
+      };
+    }
 
-    this.logger.debug(
-      '[EditorGateway] Current session content:',
-      session.currentContent,
-    );
+    // Actualizar los permisos en la sesión
+    session.userPermissions.set(data.userEmail, userPermissions);
 
-    // Emitir el evento con la información correcta
+    this.logger.debug('[EditorGateway] Joined user permissions:', {
+      userEmail: data.userEmail,
+      permissions: userPermissions,
+    });
+
+    // Emitir el evento con los permisos actualizados
     this.server.to(data.sessionId).emit('collaborationUpdate', {
       type: 'USER_JOINED',
       sessionId: data.sessionId,
       data: {
         userEmail: data.userEmail,
-        permissions,
+        permissions: userPermissions,
         activeUsers: Array.from(session.activeUsers),
+        isCreator: data.userEmail === session.creatorEmail,
       },
       timestamp: Date.now(),
     });
@@ -166,7 +181,8 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
         changes: session.buffer,
         version: session.buffer.length,
       },
-      permissions: Object.fromEntries(session.userPermissions),
+      userPermissions: userPermissions,
+      isCreator: data.userEmail === session.creatorEmail,
     };
   }
 
@@ -231,6 +247,7 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.logger.debug(
       `[EditorGateway] Updating permissions for user: ${data.targetUserEmail}`,
+      data,
     );
 
     const session = this.sessions.get(data.sessionId);
@@ -239,21 +256,31 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { status: 'error', message: 'Session not found' };
     }
 
-    const requesterPermissions = session.userPermissions.get(
-      data.requestedByEmail,
+    this.logger.debug(
+      `[EditorGateway] Session found, creator: ${session.creatorEmail}`,
     );
-    if (!requesterPermissions?.canChangePermissions) {
+    this.logger.debug(`[EditorGateway] Request by: ${data.requestedByEmail}`);
+
+    // Verificar si el usuario que solicita es el creador
+    if (session.creatorEmail !== data.requestedByEmail) {
       this.logger.error(
-        `[EditorGateway] User not authorized to change permissions: ${data.requestedByEmail}`,
+        `[EditorGateway] Unauthorized permission change attempt by: ${data.requestedByEmail}`,
       );
       return {
         status: 'error',
-        message: 'Not authorized to change permissions',
+        message: 'No tienes permisos para realizar esta acción',
       };
     }
 
+    // Actualizar los permisos
     session.userPermissions.set(data.targetUserEmail, data.newPermissions);
 
+    this.logger.debug(
+      `[EditorGateway] Permissions updated successfully for: ${data.targetUserEmail}`,
+      data.newPermissions,
+    );
+
+    // Notificar a todos los usuarios del cambio
     this.server.to(data.sessionId).emit('collaborationUpdate', {
       type: 'PERMISSIONS_CHANGED',
       sessionId: data.sessionId,
@@ -266,7 +293,7 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     return {
       status: 'success',
-      message: 'Permissions updated successfully',
+      message: 'Permisos actualizados correctamente',
     };
   }
 
