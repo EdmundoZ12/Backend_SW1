@@ -11,11 +11,18 @@ import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 
+interface UserPermissions {
+  canEdit: boolean;
+  canInvite: boolean;
+  canChangePermissions: boolean;
+}
+
 interface SessionData {
   sessionId: string;
   creatorEmail: string;
   activeUsers: Set<string>;
   allowedUsers: Set<string>;
+  userPermissions: Map<string, UserPermissions>;
   buffer: any[];
   currentContent: any;
 }
@@ -37,7 +44,25 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: Socket) {
     this.logger.debug(`[EditorGateway] Client disconnected: ${client.id}`);
-    // TODO: Implementar limpieza de sesiones y notificación a otros usuarios
+
+    // Buscar el usuario en todas las sesiones activas
+    this.sessions.forEach((session, sessionId) => {
+      const userEmail = client.handshake.query.userEmail as string;
+      if (session.activeUsers.has(userEmail)) {
+        session.activeUsers.delete(userEmail);
+
+        // Notificar a otros usuarios
+        this.server.to(sessionId).emit('collaborationUpdate', {
+          type: 'USER_LEFT',
+          sessionId,
+          data: {
+            userEmail,
+            activeUsers: Array.from(session.activeUsers),
+          },
+          timestamp: Date.now(),
+        });
+      }
+    });
   }
 
   @SubscribeMessage('createSession')
@@ -50,13 +75,21 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     const sessionId = uuidv4();
+
+    const creatorPermissions: UserPermissions = {
+      canEdit: true,
+      canInvite: true,
+      canChangePermissions: true,
+    };
+
     const sessionData: SessionData = {
       sessionId,
       creatorEmail: data.creatorEmail,
       activeUsers: new Set([data.creatorEmail]),
       allowedUsers: new Set([data.creatorEmail]),
+      userPermissions: new Map([[data.creatorEmail, creatorPermissions]]),
       buffer: [],
-      currentContent: data.initialContent || { ops: [{ insert: '\n' }] }, // Usar contenido inicial si existe
+      currentContent: data.initialContent || { ops: [{ insert: '\n' }] },
     };
 
     this.sessions.set(sessionId, sessionData);
@@ -101,17 +134,31 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(data.sessionId);
     session.activeUsers.add(data.userEmail);
 
+    // Obtener los permisos del usuario que se une
+    const permissions = session.userPermissions.get(data.userEmail) || {
+      canEdit: true,
+      canInvite: false,
+      canChangePermissions: false,
+    };
+
     this.logger.debug(
       '[EditorGateway] Current session content:',
       session.currentContent,
     );
 
-    this.server.to(data.sessionId).emit('userJoined', {
-      userEmail: data.userEmail,
-      activeUsers: Array.from(session.activeUsers),
+    // Emitir el evento con la información correcta
+    this.server.to(data.sessionId).emit('collaborationUpdate', {
+      type: 'USER_JOINED',
+      sessionId: data.sessionId,
+      data: {
+        userEmail: data.userEmail,
+        permissions,
+        activeUsers: Array.from(session.activeUsers),
+      },
+      timestamp: Date.now(),
     });
 
-    const responseData = {
+    return {
       status: 'success',
       activeUsers: Array.from(session.activeUsers),
       currentContent: {
@@ -119,10 +166,8 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
         changes: session.buffer,
         version: session.buffer.length,
       },
+      permissions: Object.fromEntries(session.userPermissions),
     };
-
-    this.logger.debug('[EditorGateway] Sending join response:', responseData);
-    return responseData;
   }
 
   @SubscribeMessage('addAllowedUsers')
@@ -155,6 +200,14 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     data.usersToAdd.forEach((email) => {
       session.allowedUsers.add(email);
+      // Asignar permisos por defecto a los nuevos usuarios
+      if (!session.userPermissions.has(email)) {
+        session.userPermissions.set(email, {
+          canEdit: true,
+          canInvite: false,
+          canChangePermissions: false,
+        });
+      }
       this.logger.debug(`[EditorGateway] Added user to session: ${email}`);
     });
 
@@ -162,6 +215,58 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       status: 'success',
       message: 'Users added successfully',
       allowedUsers: Array.from(session.allowedUsers),
+    };
+  }
+
+  @SubscribeMessage('updatePermissions')
+  handleUpdatePermissions(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      sessionId: string;
+      targetUserEmail: string;
+      newPermissions: UserPermissions;
+      requestedByEmail: string;
+    },
+  ) {
+    this.logger.debug(
+      `[EditorGateway] Updating permissions for user: ${data.targetUserEmail}`,
+    );
+
+    const session = this.sessions.get(data.sessionId);
+    if (!session) {
+      this.logger.error(`[EditorGateway] Session not found: ${data.sessionId}`);
+      return { status: 'error', message: 'Session not found' };
+    }
+
+    const requesterPermissions = session.userPermissions.get(
+      data.requestedByEmail,
+    );
+    if (!requesterPermissions?.canChangePermissions) {
+      this.logger.error(
+        `[EditorGateway] User not authorized to change permissions: ${data.requestedByEmail}`,
+      );
+      return {
+        status: 'error',
+        message: 'Not authorized to change permissions',
+      };
+    }
+
+    session.userPermissions.set(data.targetUserEmail, data.newPermissions);
+
+    this.server.to(data.sessionId).emit('collaborationUpdate', {
+      type: 'PERMISSIONS_CHANGED',
+      sessionId: data.sessionId,
+      data: {
+        userEmail: data.targetUserEmail,
+        permissions: data.newPermissions,
+      },
+      timestamp: Date.now(),
+    });
+
+    return {
+      status: 'success',
+      message: 'Permissions updated successfully',
     };
   }
 
@@ -187,7 +292,13 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { status: 'error', message: 'Not authorized' };
     }
 
-    // Siempre actualizar el contenido actual con el contenido completo recibido
+    // Verificar permiso de edición
+    const userPermissions = session.userPermissions.get(data.userEmail);
+    if (!userPermissions?.canEdit) {
+      this.logger.error(`[EditorGateway] User does not have edit permission`);
+      return { status: 'error', message: 'No edit permission' };
+    }
+
     if (data.content) {
       session.currentContent = data.content;
       this.logger.debug(
@@ -205,7 +316,6 @@ export class EditorGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     session.buffer.push(change);
 
-    // Emitir a todos los clientes excepto al emisor
     client.to(data.sessionId).emit('editorChanges', change);
 
     return { status: 'success', version: session.buffer.length };
