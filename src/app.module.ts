@@ -2,7 +2,7 @@ import 'dotenv/config'; // Alternativamente, puedes usar require('dotenv').confi
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioModule } from './usuario/usuario.module';
 import { AuthModule } from './auth/auth.module';
@@ -11,6 +11,7 @@ import { DbconfigService } from './dbconfig/dbconfig.service';
 import { GptModule } from './gpt/gpt.module';
 import { TemaModule } from './tema/tema.module';
 import { ApunteModule } from './apunte/apunte.module';
+import { EditorModule } from './websocket/editor.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ApunteModule } from './apunte/apunte.module';
     GptModule,
     TemaModule,
     ApunteModule,
+    EditorModule
   ],
   controllers: [AppController],
   providers: [AppService],

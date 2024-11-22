@@ -17,7 +17,9 @@ export class UsuarioService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(createUsuarioDto.password, salt);
 
-    const existingUsuario = await this.getUsuariobyEmail(createUsuarioDto.email);
+    const existingUsuario = await this.getUsuariobyEmail(
+      createUsuarioDto.email,
+    );
     if (existingUsuario) {
       throw new Error('El email ya ha sido tomado');
     }
