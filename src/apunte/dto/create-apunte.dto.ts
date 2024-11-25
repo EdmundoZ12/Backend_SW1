@@ -1,6 +1,6 @@
 import {
   IsNotEmpty,
-  IsNumber, IsOptional,
+  IsNumber, IsObject, IsOptional,
   IsString, Validate,
   ValidationArguments,
   ValidatorConstraint,
@@ -32,6 +32,10 @@ export class CreateApunteDto {
   @IsOptional()
   @IsNumber()
   temaId?: number;
+
+  @IsOptional()
+  @IsObject()
+  contenido?: any;
 
   @Validate(ApunteValidator) // Aplicamos la lógica personalizada
   validate() {}

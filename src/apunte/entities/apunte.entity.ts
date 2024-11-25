@@ -15,4 +15,7 @@ export class Apunte {
 
   @ManyToOne(() => Tema, (tema) => tema.apuntes, { nullable: true })
   tema: Tema;
+
+  @Column('json', { nullable: true })
+  contenido: any; // Usar `any` para almacenar el delta directamente
 }
