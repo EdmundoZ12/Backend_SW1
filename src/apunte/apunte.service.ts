@@ -73,12 +73,12 @@ export class ApunteService {
     if (!materia && !tema) {
       throw new NotFoundException('Debe proporcionar "materiaId" o "temaId"');
     }
-
-    // Creamos el apunte con la relación a Materia o Tema
+    // Creamos el apunte con la relación a Materia o Tema y contenido
     const apunte = this.apunteRepository.create({
       titulo: createApunteDto.titulo,
       materia,
       tema,
+      contenido: createApunteDto.contenido, // Asignar el contenido recibido
     });
 
     return this.apunteRepository.save(apunte);
@@ -106,7 +106,12 @@ export class ApunteService {
       if (!tema) throw new NotFoundException('Tema not found');
       apunte.tema = tema;
     }
-
+  
+    // **Actualizar el contenido**
+    if (updateApunteDto.contenido) {
+      apunte.contenido = updateApunteDto.contenido;
+    }
+  
     return this.apunteRepository.save(apunte);
   }
 
