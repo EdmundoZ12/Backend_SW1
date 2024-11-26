@@ -14,110 +14,143 @@ export const textToJsonShotStackUseCase = async (
     messages: [
       {
         content: `
-Tu tarea es generar un JSON dinámico para la API de Shotstack que convertirá texto en un video atractivo y profesional.
-
-ESTRUCTURA BASE REQUERIDA:
+Tu tarea es analizar texto educativo y generar un JSON dinámico para la API de Shotstack que convertirá el contenido en un video atractivo y profesional.
+ESTRUCTURA BASE:
 {
-    "timeline": {
-        "background": "#000000",
-        "tracks": [
-            {
-                "clips": [] // Aquí irán los clips dinámicos
-            }
-        ],
-        "soundtrack": {
-            "src": "https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/music/moment.mp3",
-            "effect": "fadeOut"
-        }
-    },
-    "output": {
-        "format": "mp4",
-        "resolution": "sd"
-    }
+"timeline": {
+"soundtrack": {
+"src": "https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/music/moment.mp3",
+"effect": "fadeOut"
+},
+"background": "#000000",
+"tracks": [
+{
+"clips": []
 }
+]
+},
+"output": {
+"format": "mp4",
+"resolution": "hd"
+}
+}
+TIPOS DE ASSETS DISPONIBLES:
 
-TIPOS DE CLIPS DISPONIBLES:
+TITLE ASSET (para textos con estilos predefinidos):
 
-1. TÍTULOS (para encabezados principales):
-{
+jsonCopy{
     "asset": {
         "type": "title",
-        "text": "TEXTO AQUÍ",
-        "style": "minimal",         // IMPORTANTE: Usar SOLO estos estilos:
-                                   // minimal, blockbuster, vogue, sketchy, skinny, 
-                                   // chunk, chunkLight, marker, future, subtitle
-        "size": "medium",          // Opciones: small, medium, large
-        "position": "center"       // Opciones: center, top, bottom
+        "text": "Texto del título",
+        "style": "minimal",
+        "size": "medium",
+        "position": "center"
     },
-    "start": NÚMERO,
-    "length": NÚMERO,
-    "transition": {
-        "in": "fade",              // Opciones: fade, slideLeft, slideRight, slideUp, slideDown
-        "out": "fade"
-    }
-}
-
-2. CONTENIDO HTML (para texto detallado):
-{
-    "asset": {
-        "type": "html",
-        "html": "<div>CONTENIDO HTML</div>",
-        "css": "div { color: #ffffff; font-family: 'Open Sans'; font-size: 28px; text-align: center; padding: 20px; }"
-    },
-    "start": NÚMERO,
-    "length": NÚMERO,
+    "start": 0,
+    "length": 5,
     "transition": {
         "in": "fade",
         "out": "fade"
     }
 }
+Estilos disponibles para title:
 
-GUÍA DE ESTILOS PARA TÍTULOS:
-- minimal: Limpio y moderno, ideal para contenido profesional
-- blockbuster: Estilo de película, impactante
-- vogue: Elegante y sofisticado
-- sketchy: Estilo dibujado a mano
-- skinny: Delgado y minimalista
-- chunk: Negrita y llamativo
-- chunkLight: Versión más ligera de chunk
-- marker: Estilo marcador
-- future: Moderno y tecnológico
-- subtitle: Ideal para subtítulos o texto secundario
+minimal
+blockbuster
+vogue
+sketchy
+skinny
+chunk
+chunkLight
+marker
+future
+subtitle
 
-ESTRUCTURA RECOMENDADA PARA UN VIDEO:
+Tamaños disponibles:
 
-1. INTRODUCCIÓN:
-   - Título principal (style: "blockbuster", length: 5s)
-   - Subtítulo o descripción (style: "minimal", length: 4s)
+small
+medium
+large
 
-2. CONTENIDO PRINCIPAL:
-   - Secciones con títulos (style: "vogue" o "future", length: 3s)
-   - Contenido detallado en HTML (length: 5-7s)
-   - Puntos clave (style: "marker" o "chunk", length: 4s)
+Posiciones disponibles:
 
-3. CONCLUSIÓN:
-   - Resumen (style: "minimal" o "skinny", length: 4s)
-   - Llamada a la acción (style: "blockbuster", length: 5s)
+center
+top
+bottom
 
-REGLAS DE TEMPORIZACIÓN:
-- Títulos principales: 4-5 segundos
-- Contenido detallado: 5-7 segundos
-- Puntos clave: 4-6 segundos
-- Duración total máxima: 60 segundos
 
-DIRECTRICES PARA HTML:
+HTML ASSET (para contenido con formato):
 
-<!-- Para texto normal -->
-<div class="content">Texto aquí</div>
+jsonCopy{
+    "asset": {
+        "type": "html",
+        "html": "<p style='text-align: center;'>Texto con formato HTML</p>",
+        "css": "p { font-family: 'Open Sans'; color: #ffffff; font-size: 28px; }",
+        "width": 800,
+        "height": 200
+    },
+    "start": 5,
+    "length": 5,
+    "transition": {
+        "in": "fade",
+        "out": "fade"
+    }
+}
+RECURSOS VERIFICADOS:
 
-<!-- Para listas -->
-<ul>
-    <li>Punto 1</li>
-    <li>Punto 2</li>
-</ul>
+MÚSICA DE FONDO:
 
-<!-- Para énfasis -->
-<div class="highlight">Texto importante</div>
+
+"https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/music/moment.mp3"
+"https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/music/disco.mp3"
+"https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/music/dreams.mp3"
+
+ESTRUCTURA RECOMENDADA PARA VIDEOS EDUCATIVOS:
+
+INTRODUCCIÓN (5-7 segundos):
+
+Title Asset con estilo "blockbuster" para título principal
+Title Asset con estilo "minimal" para subtítulo
+
+
+CONTENIDO (20-30 segundos por sección):
+
+Title Asset con estilo "future" para encabezados de sección
+HTML Asset para contenido detallado y listas
+
+
+CONCLUSIÓN (5-7 segundos):
+
+Title Asset con estilo "marker" para llamada a la acción
+
+
+
+REGLAS Y CONSEJOS:
+
+TIMING:
+
+
+Títulos: 4-5 segundos
+Contenido detallado: 5-7 segundos
+Usar transiciones suaves (fade, slideLeft, slideRight)
+
+
+DISEÑO:
+
+
+Mantener textos centrados para mejor legibilidad
+Usar HTML para listas y contenido detallado
+Mantener consistencia en tamaños y estilos
+
+
+COLORES:
+
+
+Usar fondo oscuro (#000000 o #111111)
+Texto claro para mejor contraste (#ffffff)
+Mantener una paleta consistente
+Tienes que generar un JSON válido para usar la API de Shotstack.
+
         `,
         role: 'system',
       },
@@ -127,7 +160,6 @@ DIRECTRICES PARA HTML:
       },
     ],
     model: 'gpt-4o',
-    temperature: 0.3,
     response_format: {
       type: 'json_object',
     },
