@@ -43,6 +43,7 @@ export class GptService {
   async jsonToText(textToJsonShotStackDto: TextToJsonShotStackDto) {
     return await textToJsonShotStackUseCase(this.openai, {
       prompt: textToJsonShotStackDto.prompt,
+      images: textToJsonShotStackDto.images,
     });
   }
 }
