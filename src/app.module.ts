@@ -12,6 +12,7 @@ import { GptModule } from './gpt/gpt.module';
 import { TemaModule } from './tema/tema.module';
 import { ApunteModule } from './apunte/apunte.module';
 import { EditorModule } from './websocket/editor.module';
+import { ShotstackModule } from './shotstack/shotstack.module';
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { EditorModule } from './websocket/editor.module';
     GptModule,
     TemaModule,
     ApunteModule,
-    EditorModule
+    EditorModule,
+    ShotstackModule
   ],
   controllers: [AppController],
   providers: [AppService],
