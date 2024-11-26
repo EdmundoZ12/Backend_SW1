@@ -1,8 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { GptService } from './gpt.service';
-import { ApiTags } from '@nestjs/swagger';
-import { ImageToTextDto, MindMapDto } from './dto';
-
+import { ImageToTextDto, MindMapDto, TextToJsonShotStackDto } from './dto';
 
 @Controller('gpt')
 export class GptController {
@@ -16,5 +14,10 @@ export class GptController {
   @Post('mind-map')
   mindMap(@Body() mindMapDto: MindMapDto) {
     return this.gptService.mindMap(mindMapDto);
+  }
+
+  @Post('text-to-json')
+  textToJson(@Body() textToJsonShotStackDto: TextToJsonShotStackDto) {
+    return this.gptService.jsonToText(textToJsonShotStackDto);
   }
 }

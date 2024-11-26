@@ -1,7 +1,11 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import OpenAI from 'openai';
-import { ImageToTextDto, MindMapDto } from './dto';
-import { imageToTextUseCase, mindMapUseCase } from './use-cases';
+import { ImageToTextDto, MindMapDto, TextToJsonShotStackDto } from './dto';
+import {
+  imageToTextUseCase,
+  mindMapUseCase,
+  textToJsonShotStackUseCase,
+} from './use-cases';
 
 @Injectable()
 export class GptService {
@@ -30,9 +34,15 @@ export class GptService {
     }
   }
 
-  async mindMap (mindMapDto: MindMapDto) {
+  async mindMap(mindMapDto: MindMapDto) {
     return await mindMapUseCase(this.openai, {
-      prompt: mindMapDto.prompt
+      prompt: mindMapDto.prompt,
+    });
+  }
+
+  async jsonToText(textToJsonShotStackDto: TextToJsonShotStackDto) {
+    return await textToJsonShotStackUseCase(this.openai, {
+      prompt: textToJsonShotStackDto.prompt,
     });
   }
 }
