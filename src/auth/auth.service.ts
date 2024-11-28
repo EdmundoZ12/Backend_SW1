@@ -23,7 +23,7 @@ export class AuthService{
       if (!ispasswordValid) {
         throw new UnauthorizedException('email is wrong');
       }
-      const payload = { email: usuario.email, nombre: usuario.nombre, apellido: usuario.apellido };
+      const payload = {id: usuario.id, email: usuario.email, nombre: usuario.nombre, apellido: usuario.apellido };
       const token = await this.jwtService.signAsync(payload);
       return {
         payload,
@@ -36,7 +36,7 @@ export class AuthService{
   }
 
   checkToken( usuario ) {
-    const payload = { email: usuario.email, nombre: usuario.nombre, apellido: usuario.apellido };
+    const payload = { id:usuario.id , email: usuario.email, nombre: usuario.nombre, apellido: usuario.apellido };
     const token = this.jwtService.sign(payload);
     return {
       payload,

@@ -31,7 +31,20 @@ export class MateriaService {
   }
 
   async findAll(): Promise<Materia[]> {
-    return this.materiaRepository.find();
+    return this.materiaRepository.find({
+      relations: {
+        usuario: true
+      },
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        usuario: {
+          id: true,
+          email: true,
+        }
+      }
+    });
   }
 
   async findOne(id: number): Promise<Materia> {
