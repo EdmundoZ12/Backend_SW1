@@ -53,7 +53,7 @@ export class ShotstackService {
   }
 
   async getVideo(id: string) {
-    const maxRetries = 5; // Número máximo de reintentos
+    const maxRetries = 10; // Número máximo de reintentos
     const delayMs = 5000; // Tiempo de espera entre reintentos (5 segundos)
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
