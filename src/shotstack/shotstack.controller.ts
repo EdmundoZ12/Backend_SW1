@@ -9,12 +9,12 @@ export class ShotstackController {
   constructor(private readonly shotstackService: ShotstackService) {}
 
   @Post()
-  create(@Body() createVideoDto: CreateVideoDto) {
-    return this.shotstackService.createVideo(createVideoDto);
+  async create(@Body() createVideoDto: CreateVideoDto) {
+    return await this.shotstackService.createVideo(createVideoDto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.shotstackService.getVideo(id);
+  async findOne(@Param('id') id: string) {
+    return await this.shotstackService.getVideo(id);
   }
 }

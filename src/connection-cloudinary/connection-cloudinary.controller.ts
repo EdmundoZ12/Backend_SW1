@@ -8,9 +8,10 @@ import {
   UseInterceptors,
   HttpException,
   HttpStatus,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ConnectionCloudinaryService } from './connection-cloudinary.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('cloudinary')
 export class ConnectionCloudinaryController {
@@ -80,6 +81,26 @@ export class ConnectionCloudinaryController {
     } catch (error) {
       throw new HttpException(
         'Error al eliminar la imagen',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('upload-multiple')
+  @UseInterceptors(FilesInterceptor('files'))
+  async uploadMultipleImages(@UploadedFiles() files: Express.Multer.File[]) {
+    console.log("LLEGAAAAAAAAA")
+    if (!files || files.length === 0) {
+      return { images: [] }; // Retorna un JSON vacío si no hay archivos
+    }
+
+    try {
+      const uploadedImages =
+        await this.connectionCloudinaryService.uploadMultipleImages(files);
+      return { images: uploadedImages }; // Retorna un JSON con las URLs
+    } catch (error) {
+      throw new HttpException(
+        'Error al subir las imágenes',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

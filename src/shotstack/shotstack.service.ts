@@ -53,28 +53,34 @@ export class ShotstackService {
   }
 
   async getVideo(id: string) {
-    try {
-      const response = await axios.get(`${this.apiUrl}/render/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-        },
-      });
+    const maxRetries = 5; // Número máximo de reintentos
+    const delayMs = 5000; // Tiempo de espera entre reintentos (5 segundos)
 
-      if (!response.data.success) {
-        throw new HttpException(
-          'Shotstack API error',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await axios.get(`${this.apiUrl}/render/${id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.apiKey,
+          },
+        });
+
+        if (response.data.success && response.data.response?.url) {
+          return response.data; // Devuelve el video si está listo
+        }
+
+        console.log(`Attempt ${attempt + 1}: Video not ready yet`);
+      } catch (error) {
+        console.error(`Attempt ${attempt + 1} failed:`, error.message);
       }
 
-      return response.data;
-    } catch (error) {
-      console.log(error);
-      throw new HttpException(
-        error.response?.data?.message || 'Error fetching video status',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      // Espera antes del próximo intento
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
+
+    throw new HttpException(
+      'Video not ready after maximum retries',
+      HttpStatus.REQUEST_TIMEOUT,
+    );
   }
 }

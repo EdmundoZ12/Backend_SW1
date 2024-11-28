@@ -13,6 +13,7 @@ import { TemaModule } from './tema/tema.module';
 import { ApunteModule } from './apunte/apunte.module';
 import { EditorModule } from './websocket/editor.module';
 import { ShotstackModule } from './shotstack/shotstack.module';
+import { ConnectionCloudinaryModule } from './connection-cloudinary/connection-cloudinary.module';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { ShotstackModule } from './shotstack/shotstack.module';
     TemaModule,
     ApunteModule,
     EditorModule,
-    ShotstackModule
+    ShotstackModule,
+    ConnectionCloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

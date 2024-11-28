@@ -29,6 +29,29 @@ export class ConnectionCloudinaryService {
     }
   }
 
+  // Subir múltiples imágenes
+  async uploadMultipleImages(files: Express.Multer.File[]): Promise<string[]> {
+    if (!files || files.length === 0) {
+      throw new HttpException(
+        'No se proporcionaron archivos para subir',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const uploadResults = await Promise.all(
+        files.map((file) => this.uploadToCloudinary(file.buffer)),
+      );
+      return uploadResults.map((result) => result.secure_url); // URLs seguras de las imágenes
+    } catch (error) {
+      console.error('Error al subir múltiples imágenes a Cloudinary:', error);
+      throw new HttpException(
+        'Failed to upload multiple images',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // Función para manejar el stream y convertirlo en una promesa
   private uploadToCloudinary(buffer: Buffer): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
