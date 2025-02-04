@@ -6,6 +6,8 @@ import {
   mindMapUseCase,
   textToJsonShotStackUseCase,
 } from './use-cases';
+import { AudioToTextDto } from './dto/audio-to-text.dto';
+import { audioToTextUseCase } from './use-cases/audio-to-text.use-case';
 
 @Injectable()
 export class GptService {
@@ -45,5 +47,10 @@ export class GptService {
       prompt: textToJsonShotStackDto.prompt,
       images: textToJsonShotStackDto.images,
     });
+  }
+
+  async audioToText (audioFile: Express.Multer.File, audioToTextDto: AudioToTextDto) {
+    const { prompt } = audioToTextDto;
+    return await audioToTextUseCase(this.openai, { prompt, audioFile });
   }
 }
