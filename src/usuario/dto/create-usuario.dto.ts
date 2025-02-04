@@ -4,4 +4,5 @@ export class CreateUsuarioDto {
     email:string;
     password:string;
     telefono:string;
+    tokenDevice?:string;
 }

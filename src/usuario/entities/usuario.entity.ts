@@ -1,3 +1,4 @@
+import { Apuntecompartido } from 'src/apuntescompartido/entities/apuntecompartido.entity';
 import { Materia } from 'src/materia/entities/materia.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -18,9 +19,15 @@ export class Usuario {
   @Column({ length: 255 })
   password: string;
 
+  @Column()
+  tokenDevice: string;
+
   @Column({ length: 255, nullable: true })
   telefono: string;
 
   @OneToMany(() => Materia, (materia) => materia.usuario)
   materias: Materia[];
+
+  @OneToMany(() => Apuntecompartido, (compartido) => compartido.usuario)
+  apuntescompartidos: Apuntecompartido[];
 }

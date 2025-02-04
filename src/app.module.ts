@@ -14,6 +14,8 @@ import { ApunteModule } from './apunte/apunte.module';
 import { EditorModule } from './websocket/editor.module';
 import { ShotstackModule } from './shotstack/shotstack.module';
 import { ConnectionCloudinaryModule } from './connection-cloudinary/connection-cloudinary.module';
+import { NotificationModule } from './notification/notification.module';
+import { ApuntecompartidoModule } from './apuntescompartido/apuntescompartido.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { ConnectionCloudinaryModule } from './connection-cloudinary/connection-c
     EditorModule,
     ShotstackModule,
     ConnectionCloudinaryModule,
+    NotificationModule,
+    ApuntecompartidoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
