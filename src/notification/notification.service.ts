@@ -67,7 +67,7 @@ export class NotificationService {
 
       await this.sendPush({
         title: 'Nuevo Apunte Compartido',
-        body: 'Tienes un nuevo apunte para revisar',
+        body: apunteUrl,
         deviceId: usuario.tokenDevice,
       });
 
