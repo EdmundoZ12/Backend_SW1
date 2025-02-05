@@ -15,7 +15,7 @@ export class AuthService {
   constructor(
     private readonly usuarioService: UsuarioService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login({ email, password }: LoginUsuarioDto) {
     try {
@@ -67,6 +67,19 @@ export class AuthService {
     };
   }
 
+  checkEmailByToken(usuario) {
+    const payload = {
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+    };
+
+    return {
+      payload
+    };
+  }
+  
   async updateTokenDevice(email: string, tokenDevice: string | null) {
     try {
       const usuario = await this.usuarioService.getUsuariobyEmail(email);
