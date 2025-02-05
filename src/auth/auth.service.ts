@@ -68,4 +68,17 @@ export class AuthService {
       token,
     };
   }
+
+  checkEmailByToken(usuario) {
+    const payload = {
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+    };
+
+    return {
+      payload
+    };
+  }
 }

@@ -22,4 +22,11 @@ export class AuthController{
         const user = req['user'];
         return this.authservice.checkToken(user);
     }
+
+    @UseGuards( AuthGuard )
+    @Get('check-email')
+    checkEmailByToken( @Request() req: Request ) {
+        const user = req['user'];
+        return this.authservice.checkEmailByToken(user);
+    }
 }
