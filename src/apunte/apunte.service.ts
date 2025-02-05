@@ -10,6 +10,7 @@ import { Apunte } from './entities/apunte.entity';
 import { Materia } from '../materia/entities/materia.entity';
 import { Tema } from '../tema/entities/tema.entity';
 import { Repository } from 'typeorm';
+import { Usuario } from 'src/usuario/entities/usuario.entity';
 
 @Injectable()
 export class ApunteService {
@@ -20,6 +21,8 @@ export class ApunteService {
     private readonly materiaRepository: Repository<Materia>,
     @InjectRepository(Tema)
     private readonly temaRepository: Repository<Tema>,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
   async findAll(): Promise<Apunte[]> {
@@ -106,12 +109,12 @@ export class ApunteService {
       if (!tema) throw new NotFoundException('Tema not found');
       apunte.tema = tema;
     }
-  
+
     // **Actualizar el contenido**
     if (updateApunteDto.contenido) {
       apunte.contenido = updateApunteDto.contenido;
     }
-  
+
     return this.apunteRepository.save(apunte);
   }
 
@@ -127,5 +130,49 @@ export class ApunteService {
       },
       // relations: ['tema'], // Incluye la relación si quieres los datos del tema junto con los apuntes
     });
+  }
+
+  async findByUserEmail(email: string): Promise<Apunte[]> {
+    // Primero buscamos al usuario por email
+    const usuario = await this.usuarioRepository.findOne({
+      where: { email },
+      relations: [
+        'materias',
+        'materias.apuntes',
+        'materias.temas',
+        'materias.temas.apuntes',
+      ],
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(`Usuario con email ${email} no encontrado`);
+    }
+
+    // Inicializamos un array para almacenar todos los apuntes
+    let todosLosApuntes: Apunte[] = [];
+
+    // Recopilamos apuntes de materias
+    for (const materia of usuario.materias) {
+      // Agregamos apuntes directamente asociados a la materia
+      if (materia.apuntes) {
+        todosLosApuntes = [...todosLosApuntes, ...materia.apuntes];
+      }
+
+      // Agregamos apuntes de los temas de la materia
+      if (materia.temas) {
+        for (const tema of materia.temas) {
+          if (tema.apuntes) {
+            todosLosApuntes = [...todosLosApuntes, ...tema.apuntes];
+          }
+        }
+      }
+    }
+
+    // Eliminamos posibles duplicados basándonos en el ID del apunte
+    const apuntesUnicos = Array.from(
+      new Map(todosLosApuntes.map((item) => [item.id, item])).values(),
+    );
+
+    return apuntesUnicos;
   }
 }

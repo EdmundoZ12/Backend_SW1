@@ -1,19 +1,49 @@
+// src/notification/notification.service.ts
 import { Injectable } from '@nestjs/common';
-import { UsuarioService } from 'src/usuario/usuario.service';
-import * as admin from 'firebase-admin';
-import * as serviceAccount from './firebase-admin.json'; // asegúrate que la ruta sea correcta
+import { UsuarioService } from '../usuario/usuario.service';
+import { send2NotificationDTO } from './dto/send2notification.dto';
+import { FirebaseService } from './firebase.service';
 
 @Injectable()
 export class NotificationService {
-  constructor(private readonly usuarioService: UsuarioService) {
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: serviceAccount.project_id,
-          privateKey: serviceAccount.private_key,
-          clientEmail: serviceAccount.client_email,
-        } as admin.ServiceAccount),
+  constructor(
+    private readonly usuarioService: UsuarioService,
+    private readonly firebaseService: FirebaseService,
+  ) {}
+
+  async sendPush(notification: send2NotificationDTO) {
+    try {
+      const messaging = this.firebaseService.getMessaging();
+      const response = await messaging.send({
+        notification: {
+          title: notification.title,
+          body: notification.body,
+        },
+        token: notification.deviceId,
+        data: {},
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+          },
+          payload: {
+            aps: {
+              contentAvailable: true,
+              sound: 'default',
+            },
+          },
+        },
       });
+      return response;
+    } catch (error) {
+      console.error('Error al enviar notificación push:', error);
+      throw error;
     }
   }
 
@@ -21,34 +51,31 @@ export class NotificationService {
     try {
       const usuario = await this.usuarioService.getUsuariobyEmail(email);
 
-      if (!usuario || !usuario.tokenDevice) {
+      if (!usuario) {
         return {
           success: false,
-          message:
-            'Usuario no encontrado o sin token de dispositivo registrado',
+          message: 'Usuario no encontrado',
         };
       }
 
-      const message = {
-        notification: {
-          title: 'Nuevo Apunte Compartido',
-          body: `Tienes un nuevo apunte para revisar`,
-        },
-        data: {
-          url: apunteUrl,
-        },
-        token: usuario.tokenDevice,
-      };
+      if (!usuario.tokenDevice) {
+        return {
+          success: false,
+          message: 'Usuario sin token de dispositivo registrado',
+        };
+      }
 
-      const response = await admin.messaging().send(message);
+      await this.sendPush({
+        title: 'Nuevo Apunte Compartido',
+        body: 'Tienes un nuevo apunte para revisar',
+        deviceId: usuario.tokenDevice,
+      });
 
       return {
         success: true,
         message: 'Notificación enviada exitosamente',
-        messageId: response,
       };
     } catch (error) {
-      console.error('Error al enviar notificación:', error);
       return {
         success: false,
         message: 'Error al enviar la notificación',

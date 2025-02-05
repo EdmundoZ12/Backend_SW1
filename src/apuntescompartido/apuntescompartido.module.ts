@@ -8,6 +8,6 @@ import { UsuarioModule } from 'src/usuario/usuario.module';
 @Module({
   imports: [TypeOrmModule.forFeature([Apuntecompartido]), UsuarioModule],
   controllers: [ApuntecompartidoController],
-  providers: [ApuntecompartidoService],
+  providers: [ ApuntecompartidoService],
 })
 export class ApuntecompartidoModule {}

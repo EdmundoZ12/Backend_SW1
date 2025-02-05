@@ -10,9 +10,9 @@ import {
 import { ApunteService } from './apunte.service';
 import { CreateApunteDto } from './dto/create-apunte.dto';
 import { UpdateApunteDto } from './dto/update-apunte.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-@ApiTags('Apunte') 
+@ApiTags('Apunte')
 @Controller('apunte')
 export class ApunteController {
   constructor(private readonly apunteService: ApunteService) {}
@@ -40,5 +40,13 @@ export class ApunteController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.apunteService.remove(+id);
+  }
+
+  @Get('by-user/:email')
+  @ApiOperation({
+    summary: 'Obtener todos los apuntes de un usuario por email',
+  })
+  findByUserEmail(@Param('email') email: string) {
+    return this.apunteService.findByUserEmail(email);
   }
 }
