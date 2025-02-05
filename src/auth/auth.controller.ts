@@ -22,12 +22,20 @@ export class AuthController {
     return this.authservice.login(loginUsuarioDto);
   }
 
-  @UseGuards(AuthGuard)
-  @Get('check-token')
-  checkToken(@Request() req: Request) {
-    const user = req['user'];
-    return this.authservice.checkToken(user);
-  }
+    @UseGuards( AuthGuard )
+    @Get('check-token')
+    checkToken( @Request() req: Request ) {
+        const user = req['user'];
+        return this.authservice.checkToken(user);
+    }
+
+    @UseGuards( AuthGuard )
+    @Get('check-email')
+    checkEmailByToken( @Request() req: Request ) {
+        const user = req['user'];
+        return this.authservice.checkEmailByToken(user);
+    }
+
 
   @Post('update-token')
   async updateTokenDevice(
