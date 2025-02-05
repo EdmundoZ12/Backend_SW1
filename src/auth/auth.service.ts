@@ -1,3 +1,4 @@
+// auth.service.ts
 import {
   HttpException,
   HttpStatus,
@@ -16,7 +17,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login({ email, password, tokenDevice = null }: LoginUsuarioDto) {
+  async login({ email, password }: LoginUsuarioDto) {
     try {
       const usuario = await this.usuarioService.getUsuariobyEmail(email);
 
@@ -28,9 +29,6 @@ export class AuthService {
       if (!ispasswordValid) {
         throw new UnauthorizedException('email is wrong');
       }
-
-      // Actualizar el tokenDevice
-      await this.usuarioService.update(usuario.id, { tokenDevice });
 
       const payload = {
         id: usuario.id,
@@ -67,5 +65,36 @@ export class AuthService {
       payload,
       token,
     };
+  }
+
+  async updateTokenDevice(email: string, tokenDevice: string | null) {
+    try {
+      const usuario = await this.usuarioService.getUsuariobyEmail(email);
+
+      if (!usuario) {
+        throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
+      }
+
+      const deviceTokenToUpdate =
+        tokenDevice === null ? usuario.tokenDevice : tokenDevice;
+
+      // Actualizar el tokenDevice solo si es diferente al actual
+      if (deviceTokenToUpdate !== usuario.tokenDevice) {
+        await this.usuarioService.update(usuario.id, {
+          tokenDevice: deviceTokenToUpdate === '' ? null : deviceTokenToUpdate,
+        });
+      }
+
+      return {
+        success: true,
+        message: 'Token device actualizado correctamente',
+        tokenDevice: deviceTokenToUpdate,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Error al actualizar el token device',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
