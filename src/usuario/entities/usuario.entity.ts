@@ -1,3 +1,4 @@
+import { IsOptional } from 'class-validator';
 import { Apuntecompartido } from 'src/apuntescompartido/entities/apuntecompartido.entity';
 import { Materia } from 'src/materia/entities/materia.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
@@ -19,8 +20,9 @@ export class Usuario {
   @Column({ length: 255 })
   password: string;
 
-  @Column()
-  tokenDevice: string;
+  @Column({nullable: true})
+  @IsOptional()
+  tokenDevice?: string;
 
   @Column({ length: 255, nullable: true })
   telefono: string;
