@@ -19,7 +19,7 @@ import { ApiTags } from '@nestjs/swagger';
 @ApiTags('usuarios')
 @Controller('usuarios')
 export class UsuarioController {
-  constructor(private readonly usuarioService: UsuarioService) {}
+  constructor(private readonly usuarioService: UsuarioService) { }
 
   @Post('register')
   register(@Body() createUsuarioDto: CreateUsuarioDto) {
@@ -89,6 +89,34 @@ export class UsuarioController {
     } catch (e) {
       throw new HttpException(
         'failed to retrive User',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  
+  @Get('id/:email')
+  @UseGuards(AuthGuard)
+  async getUserIdByEmail(@Param('email') email: string) {
+    try {
+      console.log('[UsuarioController] Getting user ID for email:', email);
+      const user = await this.usuarioService.getUsuariobyEmail(email);
+
+      if (!user) {
+        console.log('[UsuarioController] No user found for email:', email);
+        throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
+      }
+
+      console.log('[UsuarioController] Found user ID:', user.id);
+      return {
+        id: user.id
+      };
+    } catch (e) {
+      console.error('[UsuarioController] Error getting user ID:', e);
+      if (e instanceof HttpException) {
+        throw e;
+      }
+      throw new HttpException(
+        'Error al obtener ID de usuario',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
